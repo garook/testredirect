@@ -1,0 +1,41 @@
+{
+  "name": "redirects",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.js",
+  "scripts": {
+    "pretest": "eslint --ignore-path .gitignore .",
+    "test": "TEST=true mocha --parallel --exit tests --timeout 30000",
+    "coverage": "nyc --reporter=lcov --reporter=text mocha --exit tests --timeout 30000",
+    "start": "nodemon --ignore ./scripts/ --exec \"node app\"",
+    "allscripts": "nodemon ./scripts/all.js"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "npm run pretest",
+      "pre-push": "npm run pretest && npm run test"
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Speedoc/redirects.git"
+  },
+  "author": "Silvere Letellier",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.17.1",
+    "serverless-http": "^2.3.2"
+  },
+  "devDependencies": {
+    "babel-eslint": "^10.1.0",
+    "chai": "^4.2.0",
+    "dotenv": "^8.2.0",
+    "eslint": "^7.1.0",
+    "eslint-config-strongloop": "^2.1.0",
+    "husky": "^4.3.0",
+    "jslint": "^0.12.1",
+    "mocha": "^8.1.3",
+    "nyc": "^15.1.0",
+    "supertest": "^6.1.1"
+  }
+}

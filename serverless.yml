@@ -1,0 +1,134 @@
+service: speedoc-client-api
+
+custom:
+  layerArn: arn:aws:lambda:ap-southeast-1:804479693801:layer:api-layer:1
+  stage: ${opt:stage, 'dev'}
+
+provider:
+  name: aws
+  region: ${opt:region, 'ap-southeast-1'}
+  stage: ${self:custom.stage}
+  runtime: nodejs12.x
+  versionFunctions: false
+  timeout: 30
+  websocketsApiName: api-client-ws-${self:custom.stage}
+  endpointType: REGIONAL
+  apiName: api-client-rest-${self:custom.stage}
+  apiGateway:
+    minimumCompressionSize: 0
+    binaryMediaTypes:
+      # There is an integration bug where wilcard value "*/*" would cause 500 on the OPTIONS route
+      - "multipart/form-data"
+      - "image/*"
+      - "application/*"
+  vpc:
+    subnetIds:
+      - subnet-0e981b56154648f32
+      - subnet-0ba5f9f13af84fccc
+    securityGroupIds:
+      - sg-50144036
+  environment:
+    NODE_ENV: production
+    BUILD_ENV: ${self:custom.stage}
+    DB_URI: ${opt:DB_URI}
+    DB_PASSWORD: ${opt:DB_PASSWORD}
+    DB_USERNAME: ${opt:DB_USERNAME}
+    DB_NAME: ${opt:DB_NAME}
+    JWT_KEY: ${opt:JWT_KEY}
+    WEBSITE_URI: ${opt:WEBSITE_URI}
+    CREDENTIALS_KEY: ${opt:CREDENTIALS_KEY}
+    SENTRY_URI: ${opt:SENTRY_URI}
+    APIG_ENDPOINT:
+      Fn::Join:
+        - ""
+        - - Ref: WebsocketsApi
+          - .execute-api.
+          - Ref: AWS::Region
+          - .amazonaws.com/
+          - ${self:custom.stage}
+    CONNECTIONS_TABLE:
+      Ref: ConnectionsTable
+
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:DeleteItem
+        - dynamodb:GetItem
+        - dynamodb:Scan
+        - dynamodb:PutItem
+      Resource:
+        Fn::GetAtt:
+          - ConnectionsTable
+          - Arn
+
+resources:
+  Resources:
+    GatewayResponseDefault4XX:
+      Type: "AWS::ApiGateway::GatewayResponse"
+      Properties:
+        ResponseParameters:
+          gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+          gatewayresponse.header.Access-Control-Allow-Headers: "'*'"
+        ResponseType: DEFAULT_4XX
+        RestApiId:
+          Ref: "ApiGatewayRestApi"
+    ConnectionsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: connectionId
+            AttributeType: S
+        BillingMode: PAY_PER_REQUEST
+        KeySchema:
+          - AttributeName: connectionId
+            KeyType: HASH
+        SSESpecification:
+          SSEEnabled: true
+        TimeToLiveSpecification:
+          AttributeName: ttl
+          Enabled: true
+
+functions:
+  rest:
+    handler: app.expressHandler
+    layers:
+      - ${self:custom.layerArn}
+    events:
+      - http:
+          path: /
+          method: ANY
+          private: true
+          cors:
+            origin: "*"
+            headers: "*"
+      - http:
+          path: /{proxy+}
+          method: ANY
+          private: true
+          cors:
+            origin: "*"
+            headers: "*"
+  socket:
+    handler: app.lambdaWebsocketHandler
+    memorySize: 1024
+    events:
+      - websocket:
+          route: $connect
+          authorizer:
+            name: auth
+            identitySource:
+              - "route.request.querystring.authorization"
+      - websocket:
+          route: "PatientRequestTrigger"
+      - websocket:
+          route: "ping"
+      - websocket:
+          route: $default
+      - websocket:
+          route: $disconnect
+    layers:
+      - ${self:custom.layerArn}
+  auth:
+    handler: helpers/authentication.lambdaValidateSession
+    layers:
+      - ${self:custom.layerArn}

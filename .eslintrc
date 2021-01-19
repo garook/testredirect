@@ -1,0 +1,20 @@
+{
+  "env": {
+    "node": 1,
+    "es6": true,
+    "mocha": 1
+  },
+  "rules": {
+    "max-len": [0, 130, 4, { "ignoreUrls": true }],
+    "quotes": [2, "double", { "avoidEscape": true, "allowTemplateLiterals": true }],
+    "comma-dangle": 0,
+    "space-before-function-paren": 0,
+    "indent": 0,
+    "radix": 0
+  },
+  "extends": "strongloop",
+  "parserOptions": {
+    "ecmaVersion": 2017
+  },
+  "parser": "babel-eslint"
+}

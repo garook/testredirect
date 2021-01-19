@@ -1,0 +1,15 @@
+version: 0.2
+phases:
+  install:
+    runtime-versions:
+      nodejs: 12
+    commands:
+      - npm install --silent --progress=false -g --unsafe-perm serverless
+      - npm install
+      - |
+        if [ "$BUILD_ENV" = "dev" ]; then
+          npm test
+        fi
+  build:
+    commands:
+      - serverless deploy --stage ${BUILD_ENV} --CREDENTIALS_KEY ${CREDENTIALS_KEY} --DB_URI ${DB_URI} --DB_USERNAME ${DB_USERNAME} --DB_PASSWORD ${DB_PASSWORD} --DB_NAME ${DB_NAME} --JWT_KEY ${JWT_KEY} --WEBSITE_URI ${WEBSITE_URI} --SENTRY_URI ${SENTRY_URI}
