@@ -6,6 +6,7 @@ const { getRedirectUrl } = require("./services/redirection");
 const app = express();
 
 app.get("*", async (req, res) => {
+  console.log("abca")
   const url = await getRedirectUrl({
     protocol: req.protocol,
     hostname: req.hostname,
