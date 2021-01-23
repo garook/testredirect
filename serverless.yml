@@ -1,4 +1,4 @@
-service: speedoc-client-api
+service: speedoc-redirects
 
 custom:
   layerArn: arn:aws:lambda:ap-southeast-1:804479693801:layer:api-layer:1
@@ -11,55 +11,10 @@ provider:
   runtime: nodejs12.x
   versionFunctions: false
   timeout: 30
-  websocketsApiName: api-client-ws-${self:custom.stage}
-  endpointType: REGIONAL
-  apiName: api-client-rest-${self:custom.stage}
-  apiGateway:
-    minimumCompressionSize: 0
-    binaryMediaTypes:
-      # There is an integration bug where wilcard value "*/*" would cause 500 on the OPTIONS route
-      - "multipart/form-data"
-      - "image/*"
-      - "application/*"
-  vpc:
-    subnetIds:
-      - subnet-0e981b56154648f32
-      - subnet-0ba5f9f13af84fccc
-    securityGroupIds:
-      - sg-50144036
   environment:
     NODE_ENV: production
-    BUILD_ENV: ${self:custom.stage}
-    DB_URI: ${opt:DB_URI}
-    DB_PASSWORD: ${opt:DB_PASSWORD}
-    DB_USERNAME: ${opt:DB_USERNAME}
-    DB_NAME: ${opt:DB_NAME}
-    JWT_KEY: ${opt:JWT_KEY}
-    WEBSITE_URI: ${opt:WEBSITE_URI}
-    CREDENTIALS_KEY: ${opt:CREDENTIALS_KEY}
-    SENTRY_URI: ${opt:SENTRY_URI}
-    APIG_ENDPOINT:
-      Fn::Join:
-        - ""
-        - - Ref: WebsocketsApi
-          - .execute-api.
-          - Ref: AWS::Region
-          - .amazonaws.com/
-          - ${self:custom.stage}
-    CONNECTIONS_TABLE:
-      Ref: ConnectionsTable
-
-  iamRoleStatements:
-    - Effect: Allow
-      Action:
-        - dynamodb:DeleteItem
-        - dynamodb:GetItem
-        - dynamodb:Scan
-        - dynamodb:PutItem
-      Resource:
-        Fn::GetAtt:
-          - ConnectionsTable
-          - Arn
+    REDIRECT_QUERY: https://staging.cms.speedoc.com/redirects?source=
+    DEFAULT_URL: https://speedoc.com/sg
 
 resources:
   Resources:
@@ -96,39 +51,7 @@ functions:
     events:
       - http:
           path: /
-          method: ANY
-          private: true
+          method: GET
           cors:
             origin: "*"
             headers: "*"
-      - http:
-          path: /{proxy+}
-          method: ANY
-          private: true
-          cors:
-            origin: "*"
-            headers: "*"
-  socket:
-    handler: app.lambdaWebsocketHandler
-    memorySize: 1024
-    events:
-      - websocket:
-          route: $connect
-          authorizer:
-            name: auth
-            identitySource:
-              - "route.request.querystring.authorization"
-      - websocket:
-          route: "PatientRequestTrigger"
-      - websocket:
-          route: "ping"
-      - websocket:
-          route: $default
-      - websocket:
-          route: $disconnect
-    layers:
-      - ${self:custom.layerArn}
-  auth:
-    handler: helpers/authentication.lambdaValidateSession
-    layers:
-      - ${self:custom.layerArn}

@@ -1,16 +1,19 @@
+require("dotenv").config();
 const express = require("express");
 const serverless = require("serverless-http");
+const { getRedirectUrl } = require("./services/redirection");
+
 const app = express();
 
-const redirects = {
-  "speedoc.sg": "http:/speedoc.com/sg",
-  "speedoc.my": "http:/speedoc.com/sg",
-  "speedoc.com.my": "http:/speedoc.com/sg",
-  "localhost:8890": "http://google.com.sg"
-};
+app.get("*", async (req, res) => {
+  const url = await getRedirectUrl({
+    protocol: req.protocol,
+    hostname: req.hostname,
+    originalUrl: req.originalUrl
+  });
+  res.set("location", url);
 
-app.get("/", function (req, res) {
-  res.status(301).redirect(redirects[req.get("host")]);
+  return res.status(301).send(); ;
 });
 
 /** Production Express handler **/
@@ -19,9 +22,9 @@ module.exports.expressHandler = serverless(app);
 /**  Development handlers **/
 if (process.env.NODE_ENV !== "production") {
   (async function () {
-    console.log("**** Listening on port 8890 ****");
-    app.listen(8890);
+    console.log("**** Listening on port 8899 ****");
+    app.listen(8899);
   })();
 }
 
-module.exports = app;
+exports.app = app;
