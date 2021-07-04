@@ -1,31 +1,26 @@
 require("dotenv").config();
 const express = require("express");
-const serverless = require("serverless-http");
-const { getRedirectUrl } = require("./services/redirection");
 
 const app = express();
 
-app.get("*", async (req, res) => {
-  console.log("abca")
-  const url = await getRedirectUrl({
-    protocol: req.protocol,
-    hostname: req.hostname,
-    originalUrl: req.originalUrl
-  });
-  res.set("location", url);
+app.get("/ping", (req, res) => res.end());
 
-  return res.status(301).send(); ;
+app.get("*", async (req, res) => {
+  const url = `${req.protocol}://${req.hostname}${req.originalUrl}`;
+  try {
+    // const results = await getRedirect({ url });
+    // return res.redirect(results.statusCode || 307, results.destination);
+    console.log(req.hostname);
+    return res.redirect("https://google.com");
+  } catch (e) {
+    console.log(`Sending 400 for`, url, e.toString());
+    return res.status(400).end();
+  }
 });
 
-/** Production Express handler **/
-module.exports.expressHandler = serverless(app);
+const port = process.env.PORT || 8888;
+app.listen(port);
 
-/**  Development handlers **/
-if (process.env.NODE_ENV !== "production") {
-  (async function () {
-    console.log("**** Listening on port 8899 ****");
-    app.listen(8899);
-  })();
-}
+console.log(`**** Listening on port ${port} ****`);
 
 exports.app = app;
