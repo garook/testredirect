@@ -7,7 +7,7 @@ app.get("/ping", ({res}) => res.end());
 
 app.get("/homehospital", async ({res}) => {
   try {
-    return res.redirect("https://form.jotform.com/211774478626062");
+    return res.redirect("https://speedoc.com/sg/book/hward");
   } catch (e) {
     console.log(`error: `, e.toString());
     return res.status(400).end();
@@ -16,7 +16,7 @@ app.get("/homehospital", async ({res}) => {
 
 app.get("/aia", async ({res}) => {
   try {
-    return res.redirect("https://form.jotform.com/211775297237060");
+    return res.redirect("https://speedoc.com/sg/book/aiascreening");
   } catch (e) {
     console.log(`error: `, e.toString());
     return res.status(400).end();
