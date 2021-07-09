@@ -23,6 +23,15 @@ app.get("/aia", async ({res}) => {
   }
 });
 
+app.get("/pcn", async ({res}) => {
+  try {
+    return res.redirect("https://speedoc.com/sg/book/primarycarenetwork");
+  } catch (e) {
+    console.log(`error: `, e.toString());
+    return res.status(400).end();
+  }
+});
+
 const port = process.env.PORT || 8888;
 app.listen(port);
 
